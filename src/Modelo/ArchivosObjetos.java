@@ -13,4 +13,3 @@ public interface ArchivosObjetos {
     void recuperarAsignaturas(ArrayList<Asignatura> info);
 
 }
-s
