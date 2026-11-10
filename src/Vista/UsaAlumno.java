@@ -1,12 +1,14 @@
 package Vista;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import Modelo.Alumno;
 import Modelo.AlumnoEnPrueba;
 import Modelo.AlumnoSinPrueba;
 import Modelo.Asesoria;
 import Modelo.Asignatura;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -51,6 +53,30 @@ public class UsaAlumno extends javax.swing.JFrame {
         losAlumnos.add(walter);
         losAlumnos.add(bernardo);
         losAlumnos.add(jenifer);
+    }
+
+    public Alumno buscarAlumno(ArrayList<Alumno> info, int codigoDado) {
+        Alumno res = null;
+
+        for (Alumno a : info) {
+            if (a.getCodigo() == codigoDado) {
+                res = a;
+            }
+        }
+
+        return res;
+    }
+
+    public Asignatura buscarAsignatura(ArrayList<Asignatura> info, String codigoDado) {
+        Asignatura res = null;
+
+        for (Asignatura a : info) {
+            if (a.getCodigo().equals(codigoDado)) {
+                res = a;
+            }
+        }
+
+        return res;
     }
 
     @SuppressWarnings("unchecked")
@@ -376,15 +402,78 @@ public class UsaAlumno extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void insertarAlumnoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insertarAlumnoActionPerformed
-        // TODO add your handling code here:
+        try {
+            int codigo = Integer.parseInt(txtCodigoAlumno.getText());
+            String nombre = txtNombreAlumno.getText();
+            String tipo = (String) cbxTipoAlumno.getSelectedItem();
+
+            if (nombre.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Debe digitar el nombre del alumno");
+            } else if (buscarAlumno(losAlumnos, codigo) != null) {
+                JOptionPane.showMessageDialog(null, "Ya existe un alumno con el código " + codigo);
+            } else if (tipo.equals("EN PRUEBA")) {
+                double promedio = Double.parseDouble(txtPromedio.getText());
+                if (promedio < 0 || promedio > 5) {
+                    JOptionPane.showMessageDialog(null, "El promedio debe estar entre 0 y 5");
+                } else {
+                    losAlumnos.add(new AlumnoEnPrueba(promedio, codigo, nombre));
+                    JOptionPane.showMessageDialog(null, "Alumno en prueba insertado");
+                }
+            } else if (tipo.equals("SIN PRUEBA")) {
+                int semestre = Integer.parseInt(txtSemestre.getText());
+                if (semestre < 1) {
+                    JOptionPane.showMessageDialog(null, "El semestre debe ser mayor que 0");
+                } else {
+                    losAlumnos.add(new AlumnoSinPrueba(semestre, codigo, nombre));
+                    JOptionPane.showMessageDialog(null, "Alumno sin prueba insertado");
+                }
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Revise los datos numéricos (código, promedio o semestre)");
+        }
     }//GEN-LAST:event_insertarAlumnoActionPerformed
 
     private void insertarAsignaturaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insertarAsignaturaActionPerformed
-        // TODO add your handling code here:
+        String codigo = txtCodigoAsignatura.getText();
+        String nombre = txtNombreAsignatura.getText();
+
+        if (codigo.isEmpty() || nombre.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Debe digitar el código y el nombre de la asignatura");
+        } else if (buscarAsignatura(lasAsignaturas, codigo) != null) {
+            JOptionPane.showMessageDialog(null, "Ya existe una asignatura con el código " + codigo);
+        } else {
+            lasAsignaturas.add(new Asignatura(codigo, nombre));
+            JOptionPane.showMessageDialog(null, "Asignatura insertada");
+        }
     }//GEN-LAST:event_insertarAsignaturaActionPerformed
 
     private void registrarAsesoriaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registrarAsesoriaActionPerformed
-        // TODO add your handling code here:
+        try {
+            int codigoAlumno = Integer.parseInt(txtAlumnoAsesoria.getText());
+            String codigoAsignatura = txtAsignaturaAsesoria.getText();
+            String modalidad = (String) cbxModalidad.getSelectedItem();
+            LocalDate fecha = LocalDate.parse(txtFecha.getText());
+            int minutos = Integer.parseInt(txtMinutos.getText());
+
+            Alumno elAlumno = buscarAlumno(losAlumnos, codigoAlumno);
+            Asignatura laAsignatura = buscarAsignatura(lasAsignaturas, codigoAsignatura);
+
+            if (elAlumno == null) {
+                JOptionPane.showMessageDialog(null, "No existe un alumno con el código " + codigoAlumno);
+            } else if (laAsignatura == null) {
+                JOptionPane.showMessageDialog(null, "No existe una asignatura con el código " + codigoAsignatura);
+            } else if (minutos <= 0) {
+                JOptionPane.showMessageDialog(null, "Los minutos deben ser mayores que 0");
+            } else {
+                Asesoria nvaAsesoria = new Asesoria(laAsignatura, modalidad, fecha, minutos);
+                int esfuerzo = elAlumno.adicionarAsesoria(nvaAsesoria);
+                JOptionPane.showMessageDialog(null, "Asesoría registrada. Esfuerzo: " + esfuerzo);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "Revise el código del alumno y los minutos");
+        } catch (DateTimeParseException e) {
+            JOptionPane.showMessageDialog(null, "La fecha debe tener el formato AAAA-MM-DD, por ejemplo 2026-08-28");
+        }
     }//GEN-LAST:event_registrarAsesoriaActionPerformed
 
     private void ejecutarReporteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ejecutarReporteActionPerformed
