@@ -1,13 +1,56 @@
 package Vista;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import Modelo.Alumno;
+import Modelo.AlumnoEnPrueba;
+import Modelo.AlumnoSinPrueba;
+import Modelo.Asesoria;
+import Modelo.Asignatura;
+
 /**
  *
  * @author juang
  */
 public class UsaAlumno extends javax.swing.JFrame {
 
+    private ArrayList<Alumno> losAlumnos;
+    private ArrayList<Asignatura> lasAsignaturas;
+
     public UsaAlumno() {
         initComponents();
+        losAlumnos = new ArrayList<Alumno>();
+        lasAsignaturas = new ArrayList<Asignatura>();
+        cargarDatosIniciales();
+    }
+
+    private void cargarDatosIniciales() {
+        Asignatura asignatura1 = new Asignatura("AyP", "Algoritmia y Programación");
+        Asignatura asignatura2 = new Asignatura("POO", "Programación Orientada a Objetos");
+        Asignatura asignatura3 = new Asignatura("EDyA1", "Estructura de Datos y Algoritmos 1");
+        Asignatura asignatura4 = new Asignatura("BD1", "Bases de Datos 1");
+        lasAsignaturas.add(asignatura1);
+        lasAsignaturas.add(asignatura2);
+        lasAsignaturas.add(asignatura3);
+        lasAsignaturas.add(asignatura4);
+
+        Alumno mario = new AlumnoEnPrueba(2.8, 2233409, "Mario Ríos");
+        Alumno camila = new AlumnoSinPrueba(2, 2241834, "Camila Ramírez");
+        Alumno walter = new AlumnoSinPrueba(5, 2219045, "Walter Malagón");
+        Alumno bernardo = new AlumnoEnPrueba(2.5, 2228342, "Bernardo Guzmán");
+        Alumno jenifer = new AlumnoEnPrueba(3.1, 2211834, "Jenifer Valencia");
+
+        mario.adicionarAsesoria(new Asesoria(asignatura2, "VIRTUAL", LocalDate.of(2026, 8, 12), 15));
+        mario.adicionarAsesoria(new Asesoria(asignatura2, "PRESENCIAL", LocalDate.of(2026, 8, 28), 20));
+        camila.adicionarAsesoria(new Asesoria(asignatura1, "PRESENCIAL", LocalDate.of(2026, 8, 11), 22));
+        walter.adicionarAsesoria(new Asesoria(asignatura4, "PRESENCIAL", LocalDate.of(2026, 10, 9), 25));
+        walter.adicionarAsesoria(new Asesoria(asignatura3, "VIRTUAL", LocalDate.of(2026, 10, 14), 15));
+
+        losAlumnos.add(mario);
+        losAlumnos.add(camila);
+        losAlumnos.add(walter);
+        losAlumnos.add(bernardo);
+        losAlumnos.add(jenifer);
     }
 
     @SuppressWarnings("unchecked")
