@@ -1,29 +1,47 @@
 package Vista;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import Modelo.Alumno;
 import Modelo.AlumnoEnPrueba;
 import Modelo.AlumnoSinPrueba;
 import Modelo.Asesoria;
 import Modelo.Asignatura;
+import Modelo.ArchivosObjetos;
+import Modelo.ReportesAlumnos;
 import javax.swing.JOptionPane;
 
 /**
  *
  * @author juang
  */
-public class UsaAlumno extends javax.swing.JFrame {
+public class UsaAlumno extends javax.swing.JFrame implements ReportesAlumnos, ArchivosObjetos {
 
     private ArrayList<Alumno> losAlumnos;
     private ArrayList<Asignatura> lasAsignaturas;
+    private static final String ARCHIVO_ALUMNOS = "alumnos.dat";
+    private static final String ARCHIVO_ASIGNATURAS = "asignaturas.dat";
 
     public UsaAlumno() {
         initComponents();
         losAlumnos = new ArrayList<Alumno>();
         lasAsignaturas = new ArrayList<Asignatura>();
-        cargarDatosIniciales();
+
+        recuperarAsignaturas(lasAsignaturas);
+        recuperarAlumnos(losAlumnos);
+
+        if (losAlumnos.isEmpty() && lasAsignaturas.isEmpty()) {
+            cargarDatosIniciales();
+        }
     }
 
     private void cargarDatosIniciales() {
@@ -77,6 +95,124 @@ public class UsaAlumno extends javax.swing.JFrame {
         }
 
         return res;
+    }
+
+    @Override
+    public void ordenarPorCodigo(ArrayList<Alumno> info) {
+        info.sort(Comparator.comparing(Alumno::getCodigo));
+    }
+
+    @Override
+    public String listarAlumnos(ArrayList<Alumno> info) {
+        String res = "No hay alumnos registrados";
+
+        if (!info.isEmpty()) {
+            res = "LISTADO DE ALUMNOS\n";
+            for (Alumno a : info) {
+                res = res + a.getCodigo() + " - " + a.getNombre() + " - "
+                        + a.calcularAprovechamiento() + " - "
+                        + a.getSusAsesorias().size() + " asesorías\n";
+            }
+        }
+
+        return res;
+    }
+
+    @Override
+    public String consultarAlumno(ArrayList<Alumno> info, int codigoDado) {
+        String res = "No existe un alumno con el código " + codigoDado;
+        Alumno elAlumno = buscarAlumno(info, codigoDado);
+
+        if (elAlumno != null) {
+            res = "Código: " + elAlumno.getCodigo() + "\n";
+            res = res + "Nombre: " + elAlumno.getNombre() + "\n";
+
+            if (elAlumno instanceof AlumnoEnPrueba) {
+                AlumnoEnPrueba enPrueba = (AlumnoEnPrueba) elAlumno;
+                res = res + "Tipo: en prueba académica\n";
+                res = res + "Promedio: " + enPrueba.getPromedio() + "\n";
+            } else if (elAlumno instanceof AlumnoSinPrueba) {
+                AlumnoSinPrueba sinPrueba = (AlumnoSinPrueba) elAlumno;
+                res = res + "Tipo: sin prueba académica\n";
+                res = res + "Semestre: " + sinPrueba.getSemestre() + "\n";
+            }
+
+            res = res + "Minutos totales: " + elAlumno.calcularMinutos() + "\n";
+            res = res + "Aprovechamiento: " + elAlumno.calcularAprovechamiento() + "\n";
+            res = res + "Asesorías:\n";
+
+            for (Asesoria a : elAlumno.getSusAsesorias()) {
+                res = res + a.getSuAsignatura().getNombre() + " - " + a.getModalidad()
+                        + " - " + a.getFecha() + " - " + a.getMinutos() + " minutos"
+                        + " - esfuerzo " + a.calcularEsfuerzo() + "\n";
+            }
+        }
+
+        return res;
+    }
+
+    @Override
+    public void almacenarAlumnos(ArrayList<Alumno> info) {
+        try (ObjectOutputStream salida
+                = new ObjectOutputStream(new FileOutputStream(ARCHIVO_ALUMNOS))) {
+            salida.writeObject(info);
+        } catch (FileNotFoundException e) {
+            System.out.println("No se pudo crear el archivo: " + ARCHIVO_ALUMNOS);
+        } catch (NotSerializableException e) {
+            System.out.println("La clase Alumno no es serializable");
+        } catch (IOException e) {
+            System.out.println("Error escribiendo en el archivo");
+        }
+    }
+
+    @Override
+    public void recuperarAlumnos(ArrayList<Alumno> info) {
+        try (ObjectInputStream entrada
+                = new ObjectInputStream(new FileInputStream(ARCHIVO_ALUMNOS))) {
+            ArrayList<Alumno> laBD = (ArrayList<Alumno>) entrada.readObject();
+            info.clear();
+            info.addAll(laBD);
+        } catch (FileNotFoundException e) {
+            System.out.println("No se encontró el archivo: " + ARCHIVO_ALUMNOS);
+        } catch (ClassNotFoundException e) {
+            System.out.println("La clase Alumno no coincide con el archivo");
+        } catch (IOException e) {
+            System.out.println("Error de lectura del archivo");
+        } catch (ClassCastException e) {
+            System.out.println("El contenido del archivo no es válido");
+        }
+    }
+
+    @Override
+    public void almacenarAsignaturas(ArrayList<Asignatura> info) {
+        try (ObjectOutputStream salida
+                = new ObjectOutputStream(new FileOutputStream(ARCHIVO_ASIGNATURAS))) {
+            salida.writeObject(info);
+        } catch (FileNotFoundException e) {
+            System.out.println("No se pudo crear el archivo: " + ARCHIVO_ASIGNATURAS);
+        } catch (NotSerializableException e) {
+            System.out.println("La clase Asignatura no es serializable");
+        } catch (IOException e) {
+            System.out.println("Error escribiendo en el archivo");
+        }
+    }
+
+    @Override
+    public void recuperarAsignaturas(ArrayList<Asignatura> info) {
+        try (ObjectInputStream entrada
+                = new ObjectInputStream(new FileInputStream(ARCHIVO_ASIGNATURAS))) {
+            ArrayList<Asignatura> laBD = (ArrayList<Asignatura>) entrada.readObject();
+            info.clear();
+            info.addAll(laBD);
+        } catch (FileNotFoundException e) {
+            System.out.println("No se encontró el archivo: " + ARCHIVO_ASIGNATURAS);
+        } catch (ClassNotFoundException e) {
+            System.out.println("La clase Asignatura no coincide con el archivo");
+        } catch (IOException e) {
+            System.out.println("Error de lectura del archivo");
+        } catch (ClassCastException e) {
+            System.out.println("El contenido del archivo no es válido");
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -477,11 +613,25 @@ public class UsaAlumno extends javax.swing.JFrame {
     }//GEN-LAST:event_registrarAsesoriaActionPerformed
 
     private void ejecutarReporteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ejecutarReporteActionPerformed
-        // TODO add your handling code here:
+        String reporte = (String) cbxReporte.getSelectedItem();
+
+        if (reporte.equals("Listado de alumnos")) {
+            ordenarPorCodigo(losAlumnos);
+            txaResultado.setText(listarAlumnos(losAlumnos));
+        } else if (reporte.equals("Consulta de un alumno")) {
+            try {
+                int codigo = Integer.parseInt(txtCodigoConsulta.getText());
+                txaResultado.setText(consultarAlumno(losAlumnos, codigo));
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(null, "Digite un código de alumno válido");
+            }
+        }
     }//GEN-LAST:event_ejecutarReporteActionPerformed
 
     private void salirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_salirActionPerformed
-        // TODO add your handling code here:
+        almacenarAlumnos(losAlumnos);
+        almacenarAsignaturas(lasAsignaturas);
+        System.exit(0);
     }//GEN-LAST:event_salirActionPerformed
 
     public static void main(String args[]) {
